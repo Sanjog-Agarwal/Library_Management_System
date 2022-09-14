@@ -111,6 +111,13 @@ class LanguageView(View):
     def __init__(self):
         self.response=init_response()
 
+    def validateJSON(self, meta_data):
+        try:
+            json.loads(meta_data)
+        except:
+            return False
+        return True
+
     def get(self, request, *args, **kwargs):
         params = request.GET.dict()
         lang_id=params.get('lang_id')
