@@ -1,7 +1,7 @@
 from django.db import models
 from phonenumber_field.modelfields import PhoneNumberField
 import uuid
-
+from django.core.validators import *
 class BaseModel(models.Model):
     status_choices = {
         ("1", "Active"),
@@ -59,7 +59,7 @@ class Publisher(BaseModel):
     meta_data = models.JSONField(null=True, blank=True)
 
     def __str__(self):
-        return self.name
+        return str(self.pub_id)
 
     def as_dict(self):
         return {
@@ -105,7 +105,7 @@ class User(BaseModel):
     first_name = models.CharField(max_length=200)
     middle_name = models.CharField(max_length=200, null=True, blank=True)
     last_name = models.CharField(max_length=200, null=True, blank=True)
-    mobile = PhoneNumberField()
+    mobile = PhoneNumberField(null=True, blank=True)
     email = models.EmailField(max_length = 254, unique=True)
     meta_data = models.JSONField(null=True, blank=True)
     role = models.CharField(max_length=1, choices = type_choices, default="3")
@@ -116,8 +116,7 @@ class User(BaseModel):
         return self.first_name
 
     def as_dict(self):
-        return {
-            'user_id':self.user_id,
+        return {    
             'first_name':self.first_name,
             'middle_name':self.middle_name,
             'last_name':self.last_name,
