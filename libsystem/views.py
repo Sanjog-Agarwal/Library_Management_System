@@ -1,4 +1,3 @@
-from dataclasses import field
 from django.db import IntegrityError
 from .models import *
 from .responses import *
@@ -10,13 +9,14 @@ from .decorators import *
 from .constants import *
 import re
 from .utils import *
+from django.db.models import Q
 
 class AuthorView(View):
 
     def __init__(self):
         self.response = init_response()
 
-    def get(self, request, *args, **kwargs):
+    def get(self, request):
         try: 
             params = request.GET.dict()
             name = params.get('name')
@@ -26,24 +26,24 @@ class AuthorView(View):
                 if not author:
                     raise ObjectDoesNotExist
                 self.response['res_data'] = [author.as_dict() for author in author]
-                self.response['res_str'] = FIELD_FETCHED_SUCCESSFULLY.format(field_name = AUTHOR)
+                self.response['res_str'] = FIELD_FETCHED_SUCCESSFULLY.format(AUTHOR)
                 return send_200(self.response)
             else:
                 limit=int(params.get('limit', LIMIT))
                 offset=int(params.get('offset', OFFSET))
                 all_authors = Author.objects.filter().exclude(status ="3")[offset:offset+limit]
                 self.response['res_data'] = [author.as_dict() for author in all_authors]
-                self.response['res_str'] = FIELD_FETCHED_SUCCESSFULLY.format(field_name=AUTHOR)
+                self.response['res_str'] = FIELD_FETCHED_SUCCESSFULLY.format(AUTHOR)
                 return send_200(self.response)
 
         except ObjectDoesNotExist:
-            self.response['res_str'] = OBJECT_NOT_FOUND.format(field_name=AUTHOR)
+            self.response['res_str'] = OBJECT_NOT_FOUND.format(AUTHOR)
         except Exception as ex:
             self.response['res_str'] = GENERAL_ERROR + str(ex)
         return send_400(self.response)
 
     # @Validate_JSON(['meta_data'])
-    def post(self, request, *args, **kwargs):
+    def post(self, request):
         try:
             params = request.POST.dict()
             get_and_validate(params, ['name'])
@@ -56,7 +56,7 @@ class AuthorView(View):
                 raise JSONError
             author_obj = Author.objects.create(name=name, description=description, meta_data=meta_data)
             self.response['res_data'] = author_obj.as_dict()
-            self.response['res_str'] = FIELD_CREATED_SUCCESSFULLY.format(field_name = AUTHOR)
+            self.response['res_str'] = FIELD_CREATED_SUCCESSFULLY.format(AUTHOR)
             return send_201(self.response)
 
         except (ValidationError, FieldBlank) as e:
@@ -64,34 +64,34 @@ class AuthorView(View):
         except JSONError:
             self.response['res_str'] = INVALID_JSON
         except ObjectAlreadyExist:
-            self.response['res_str'] = FIELD_ALREADY_EXISTS.format(field_name = AUTHOR)
+            self.response['res_str'] = FIELD_ALREADY_EXISTS.format(AUTHOR)
         except Exception as ex:
             self.response['res_str'] = GENERAL_ERROR + str(ex)
         return send_400(self.response)
     
-    def delete(self, request,*args, **kwargs):
+    def delete(self, request):
         try:
             # params = QueryDict(request.body)
             params = json.loads(request.body)
             get_and_validate(params, ['a_id'])
             author_to_delete= Author.objects.get(a_id= uuid.UUID(params['a_id']).hex)
             if author_to_delete.status is "3":
-                self.response['res_str'] = FIELD_ALREADY_DELETED.format(field_name = AUTHOR)
+                self.response['res_str'] = FIELD_ALREADY_DELETED.format(AUTHOR)
                 return send_400(self.response)
             author_to_delete.status = "3"
             author_to_delete.save()
-            self.response['res_str'] = FIELD_DELETED_SUCCESSFULLY.format(field_name = AUTHOR)
+            self.response['res_str'] = FIELD_DELETED_SUCCESSFULLY.format(AUTHOR)
             return send_200(self.response) 
 
         except (ValidationError, FieldBlank) as e:
             self.response['res_str'] = str(e)
         except Author.DoesNotExist:
-            self.response['res_str'] = OBJECT_NOT_FOUND.format(field_name=AUTHOR)
+            self.response['res_str'] = OBJECT_NOT_FOUND.format(AUTHOR)
         except Exception as ex:
             self.response['res_str'] = GENERAL_ERROR + str(ex)
         return send_400(self.response)
 	
-    def put(self, request, *args, **kwargs):
+    def put(self, request):
         try:
             # params = request.POST.dict()
             # params = QueryDict(request.body)
@@ -110,7 +110,7 @@ class AuthorView(View):
                     author_obj.meta_data=meta_data
             author_obj.save()
             self.response['res_data'] = author_obj.as_dict()
-            self.response['res_str'] = FIELD_UPDATED_SUCCESSFULLY.format(field_name = AUTHOR)
+            self.response['res_str'] = FIELD_UPDATED_SUCCESSFULLY.format(AUTHOR)
             return send_201(self.response)
 
         except (ValidationError, FieldBlank) as e:
@@ -118,7 +118,7 @@ class AuthorView(View):
         except JSONError:
             self.response['res_str'] = INVALID_JSON
         except Author.DoesNotExist:
-            self.response['res_str'] = OBJECT_NOT_FOUND.format(field_name=AUTHOR)
+            self.response['res_str'] = OBJECT_NOT_FOUND.format(AUTHOR)
         except Exception as ex:
             self.response['res_str']= GENERAL_ERROR + str(ex)
         return send_400(self.response)
@@ -128,7 +128,7 @@ class LanguageView(View):
     def __init__(self):
         self.response=init_response()
 
-    def get(self, request, *args, **kwargs):
+    def get(self, request):
         try:
             params = request.GET.dict()
             name=params.get('name')
@@ -137,23 +137,23 @@ class LanguageView(View):
                 if not language.exists():
                     raise ObjectDoesNotExist
                 self.response['res_data'] = [language.as_dict() for language in language]
-                self.response['res_str'] = FIELD_FETCHED_SUCCESSFULLY.format(field_name=LANGUAGE)
+                self.response['res_str'] = FIELD_FETCHED_SUCCESSFULLY.format(LANGUAGE)
                 return send_200(self.response)
             else:
                 limit=int(params.get('limit', LIMIT))
                 offset=int(params.get('offset', OFFSET))
                 all_languages=Language.objects.filter().exclude(status="3")[offset:offset+limit]
                 self.response['res_data'] = [language.as_dict() for language in all_languages]
-                self.response['res_str'] = FIELD_FETCHED_SUCCESSFULLY.format(field_name=LANGUAGE)
+                self.response['res_str'] = FIELD_FETCHED_SUCCESSFULLY.format(LANGUAGE)
                 return send_200(self.response)
     
         except ObjectDoesNotExist:
-            self.response['res_str'] = OBJECT_NOT_FOUND.format(field_name=LANGUAGE)
+            self.response['res_str'] = OBJECT_NOT_FOUND.format(LANGUAGE)
         except Exception as ex:
             self.response['res_str'] = GENERAL_ERROR + str(ex)
         return send_400(self.response)
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request):
         try:
             params = request.POST.dict()
             get_and_validate(params, ['name'])
@@ -164,39 +164,39 @@ class LanguageView(View):
                 raise ObjectAlreadyExist
             language_obj = Language.objects.create(name=name, script=script ,about=about)
             self.response['res_data'] = language_obj.as_dict()
-            self.response['res_str'] = FIELD_CREATED_SUCCESSFULLY.format(field_name = LANGUAGE)
+            self.response['res_str'] = FIELD_CREATED_SUCCESSFULLY.format(LANGUAGE)
             return send_201(self.response)
 
         except (ValidationError, FieldBlank) as e:
             self.response['res_str'] = str(e)
         except ObjectAlreadyExist:
-            self.response['res_str'] = FIELD_ALREADY_EXISTS.format(field_name = LANGUAGE)
+            self.response['res_str'] = FIELD_ALREADY_EXISTS.format(LANGUAGE)
         except Exception as ex:
             self.response['res_str'] = GENERAL_ERROR + str(ex)
         return send_400(self.response)
 
-    def delete(self, request,*args, **kwargs):
+    def delete(self, request):
         try:
             params = json.loads(request.body)
             get_and_validate(params, ['lang_id'])
             language_to_delete= Language.objects.get(lang_id= uuid.UUID(params['lang_id']).hex)
             if language_to_delete.status is "3":
-                self.response['res_str'] = FIELD_ALREADY_DELETED.format(field_name = LANGUAGE)
+                self.response['res_str'] = FIELD_ALREADY_DELETED.format(LANGUAGE)
                 return send_400(self.response)
             language_to_delete.status = "3"
             language_to_delete.save()
-            self.response['res_str'] = FIELD_DELETED_SUCCESSFULLY.format(field_name = LANGUAGE)
+            self.response['res_str'] = FIELD_DELETED_SUCCESSFULLY.format(LANGUAGE)
             return send_200(self.response)
 
         except (ValidationError, FieldBlank) as e:
             self.response['res_str'] = str(e)
         except Language.DoesNotExist:
-            self.response['res_str'] = OBJECT_NOT_FOUND.format(field_name=LANGUAGE)
+            self.response['res_str'] = OBJECT_NOT_FOUND.format(LANGUAGE)
         except Exception as ex:
             self.response['res_str'] = GENERAL_ERROR + str(ex)
         return send_400(self.response)
 
-    def put(self, request, *args, **kwargs):
+    def put(self, request):
         try:
             params = json.loads(request.body)
             get_and_validate(params, ['lang_id']) 
@@ -210,13 +210,13 @@ class LanguageView(View):
                 language_obj.about=about
             language_obj.save()
             self.response['res_data'] = language_obj.as_dict()
-            self.response['res_str'] = FIELD_UPDATED_SUCCESSFULLY.format(field_name = LANGUAGE)
+            self.response['res_str'] = FIELD_UPDATED_SUCCESSFULLY.format(LANGUAGE)
             return send_201(self.response)
 
         except (ValidationError, FieldBlank) as e:
             self.response['res_str'] = str(e)
         except Language.DoesNotExist:
-            self.response['res_str'] = OBJECT_NOT_FOUND.format(field_name=LANGUAGE)
+            self.response['res_str'] = OBJECT_NOT_FOUND.format(LANGUAGE)
         except Exception as ex:
             self.response['res_str']= GENERAL_ERROR + str(ex)
         return send_400(self.response)
@@ -235,18 +235,18 @@ class PublisherView(View):
                 if not publisher.exists():
                     raise ObjectDoesNotExist
                 self.response['res_data'] = [publisher.as_dict() for publisher in publisher]
-                self.response['res_str'] = FIELD_FETCHED_SUCCESSFULLY.format(field_name=PUBLISHER)
+                self.response['res_str'] = FIELD_FETCHED_SUCCESSFULLY.format(PUBLISHER)
                 return send_200(self.response)
             else:
                 limit=int(params.get('limit', LIMIT))
                 offset=int(params.get('offset', OFFSET))
                 all_publishers=Publisher.objects.filter().exclude(status="3")[offset:offset+limit]
                 self.response['res_data'] = [publisher.as_dict() for publisher in all_publishers]
-                self.response['res_str'] = FIELD_FETCHED_SUCCESSFULLY.format(field_name=PUBLISHER)
+                self.response['res_str'] = FIELD_FETCHED_SUCCESSFULLY.format(PUBLISHER)
                 return send_200(self.response)
 
         except ObjectDoesNotExist:
-            self.response['res_str'] = OBJECT_NOT_FOUND.format(field_name=PUBLISHER)
+            self.response['res_str'] = OBJECT_NOT_FOUND.format(PUBLISHER)
         except Exception as ex:
             self.response['res_str'] = GENERAL_ERROR + str(ex)
         return send_400(self.response)
@@ -263,7 +263,7 @@ class PublisherView(View):
                 raise JSONError
             publisher_obj = Publisher.objects.create(name=name, meta_data=meta_data)
             self.response['res_data'] = publisher_obj.as_dict()
-            self.response['res_str'] = FIELD_CREATED_SUCCESSFULLY.format(field_name = PUBLISHER)
+            self.response['res_str'] = FIELD_CREATED_SUCCESSFULLY.format(PUBLISHER)
             return send_201(self.response)
 
         except (ValidationError, FieldBlank) as e:
@@ -271,33 +271,33 @@ class PublisherView(View):
         except JSONError:
             self.response['res_str'] = INVALID_JSON
         except ObjectAlreadyExist:
-            self.response['res_str'] = FIELD_ALREADY_EXISTS.format(field_name = PUBLISHER)
+            self.response['res_str'] = FIELD_ALREADY_EXISTS.format(PUBLISHER)
         except Exception as ex:
             self.response['res_str'] = GENERAL_ERROR + str(ex)
         return send_400(self.response)
 
-    def delete(self, request,*args, **kwargs):
+    def delete(self, request):
         try:
             params = json.loads(request.body)
             get_and_validate(params, ['pub_id'])
             publisher_to_delete= Publisher.objects.get(pub_id= uuid.UUID(params['pub_id']).hex)
             if publisher_to_delete.status is "3":
-                self.response['res_str'] = FIELD_ALREADY_DELETED.format(field_name = PUBLISHER)
+                self.response['res_str'] = FIELD_ALREADY_DELETED.format(PUBLISHER)
                 return send_400(self.response)
             publisher_to_delete.status = "3"
             publisher_to_delete.save()
-            self.response['res_str'] = FIELD_DELETED_SUCCESSFULLY.format(field_name = PUBLISHER)
+            self.response['res_str'] = FIELD_DELETED_SUCCESSFULLY.format(PUBLISHER)
             return send_200(self.response)
 
         except (ValidationError, FieldBlank) as e:
             self.response['res_str'] = str(e)
         except Publisher.DoesNotExist:
-            self.response['res_str'] = OBJECT_NOT_FOUND.format(field_name=PUBLISHER)
+            self.response['res_str'] = OBJECT_NOT_FOUND.format(PUBLISHER)
         except Exception as ex:
             self.response['res_str'] = GENERAL_ERROR + str(ex)
         return send_400(self.response)
 	
-    def put(self, request, *args, **kwargs):
+    def put(self, request):
         try:
             params = json.loads(request.body)
             get_and_validate(params, ['pub_id']) 
@@ -310,7 +310,7 @@ class PublisherView(View):
                 publisher_obj.meta_data=meta_data
             publisher_obj.save()
             self.response['res_data'] = publisher_obj.as_dict()
-            self.response['res_str'] = FIELD_UPDATED_SUCCESSFULLY.format(field_name = PUBLISHER)
+            self.response['res_str'] = FIELD_UPDATED_SUCCESSFULLY.format(PUBLISHER)
             return send_201(self.response)
 
         except (ValidationError, FieldBlank) as e:
@@ -318,7 +318,7 @@ class PublisherView(View):
         except JSONError:
             self.response['res_str'] = INVALID_JSON
         except Publisher.DoesNotExist:
-            self.response['res_str'] = OBJECT_NOT_FOUND.format(field_name=PUBLISHER)
+            self.response['res_str'] = OBJECT_NOT_FOUND.format(PUBLISHER)
         except Exception as ex:
             self.response['res_str']= GENERAL_ERROR + str(ex)
         return send_400(self.response)
@@ -328,7 +328,7 @@ class BookView(View):
     def __init__(self):
         self.response = init_response()
 
-    def get(self, request, *args, **kwargs):
+    def get(self, request):
         try: 
             params = request.GET.dict()
             name = params.get('name')
@@ -337,18 +337,18 @@ class BookView(View):
                 if not book.exists():
                     raise ObjectDoesNotExist
                 self.response['res_data'] = [book.as_dict() for book in book]
-                self.response['res_str'] = FIELD_FETCHED_SUCCESSFULLY.format(field_name=BOOK)
+                self.response['res_str'] = FIELD_FETCHED_SUCCESSFULLY.format(BOOK)
                 return send_200(self.response)
             else:
                 limit=int(params.get('limit', LIMIT))
                 offset=int(params.get('offset', OFFSET))
                 all_books = Book.objects.filter().exclude(status ="3")[offset:offset+limit]
                 self.response['res_data'] = [book.as_dict() for book in all_books]
-                self.response['res_str'] = FIELD_FETCHED_SUCCESSFULLY.format(field_name=BOOK)
+                self.response['res_str'] = FIELD_FETCHED_SUCCESSFULLY.format(BOOK)
                 return send_200(self.response)
 
         except ObjectDoesNotExist:
-            self.response['res_str'] = OBJECT_NOT_FOUND.format(field_name=BOOK)
+            self.response['res_str'] = OBJECT_NOT_FOUND.format(BOOK)
         except Exception as ex:
             self.response['res_str'] = GENERAL_ERROR + str(ex)
         return send_400(self.response)
@@ -390,51 +390,51 @@ class BookView(View):
             book_obj.languages.add(*languages)
             book_obj.authors.add(*authors)
             self.response['res_data'] = book_obj.as_dict()
-            self.response['res_str'] = FIELD_CREATED_SUCCESSFULLY.format(field_name = BOOK)
+            self.response['res_str'] = FIELD_CREATED_SUCCESSFULLY.format(BOOK)
             return send_201(self.response)
 
         except (ValidationError, FieldBlank) as e:
             self.response['res_str'] = str(e)
         except PublisherError:
-            self.response['res_str'] = ONE_FEILD_NEEDED.format(field_name=AUTHOR, field_name2 = BOOK)
+            self.response['res_str'] = ONE_FEILD_NEEDED.format(AUTHOR, BOOK)
         except PublisherDoesNotExist:
-            self.response['res_str'] = OBJECT_NOT_FOUND.format(field_name=PUBLISHER)
+            self.response['res_str'] = OBJECT_NOT_FOUND.format(PUBLISHER)
         except LanguageError:
-            self.response['res_str'] = ONE_FEILD_NEEDED.format(field_name=LANGUAGE, field_name2 = BOOK)
+            self.response['res_str'] = ONE_FEILD_NEEDED.format(LANGUAGE, BOOK)
         except LanguageDoesNotExist:
-            self.response['res_str'] = OBJECT_NOT_FOUND.format(field_name=LANGUAGE)
+            self.response['res_str'] = OBJECT_NOT_FOUND.format(LANGUAGE)
         except AuthorError:
-            self.response['res_str'] = ONE_FEILD_NEEDED.format(field_name=AUTHOR, field_name2 = BOOK)
+            self.response['res_str'] = ONE_FEILD_NEEDED.format(AUTHOR, BOOK)
         except AuthorDoesNotExist:
-            self.response['res_str'] = OBJECT_NOT_FOUND.format(field_name=AUTHOR)
+            self.response['res_str'] = OBJECT_NOT_FOUND.format(AUTHOR)
         except JSONError:
             self.response['res_str'] = INVALID_JSON
         except Exception as ex:
             self.response['res_str'] = GENERAL_ERROR + str(ex)
         return send_400(self.response)
 
-    def delete(self, request,*args, **kwargs):
+    def delete(self, request):
         try:
             params = json.loads(request.body)
             get_and_validate(params, ['book_id'])
             book_to_delete= Book.objects.get(book_id= uuid.UUID(params['book_id']).hex)
             if book_to_delete.status is "3":
-                self.response['res_str'] = FIELD_ALREADY_DELETED.format(field_name = BOOK)
+                self.response['res_str'] = FIELD_ALREADY_DELETED.format(BOOK)
                 return send_400(self.response)
             book_to_delete.status = "3"
             book_to_delete.save()
-            self.response['res_str'] = FIELD_DELETED_SUCCESSFULLY.format(field_name = BOOK)
+            self.response['res_str'] = FIELD_DELETED_SUCCESSFULLY.format(BOOK)
             return send_200(self.response)
 
         except (ValidationError, FieldBlank) as e:
             self.response['res_str'] = str(e)
         except Book.DoesNotExist:
-            self.response['res_str'] = OBJECT_NOT_FOUND.format(field_name=BOOK)
+            self.response['res_str'] = OBJECT_NOT_FOUND.format(BOOK)
         except Exception as ex:
             self.response['res_str'] = GENERAL_ERROR + str(ex)
         return send_400(self.response)
 
-    def put(self, request, *args, **kwargs):
+    def put(self, request):
         try:
             params = json.loads(request.body)
             get_and_validate(params, ['book_id']) 
@@ -465,7 +465,7 @@ class BookView(View):
             
             book_obj.save()
             self.response['res_data'] = book_obj.as_dict()
-            self.response['res_str'] = FIELD_UPDATED_SUCCESSFULLY.format(field_name = BOOK)
+            self.response['res_str'] = FIELD_UPDATED_SUCCESSFULLY.format(BOOK)
             return send_201(self.response)
 
         except (ValidationError, FieldBlank) as e:
@@ -473,11 +473,11 @@ class BookView(View):
         except JSONError:
             self.response['res_str'] = INVALID_JSON
         except LanguageDoesNotExist:
-            self.response['res_str'] = OBJECT_NOT_FOUND.format(field_name=LANGUAGE)
+            self.response['res_str'] = OBJECT_NOT_FOUND.format(LANGUAGE)
         except AuthorDoesNotExist:
-            self.response['res_str'] = OBJECT_NOT_FOUND.format(field_name=AUTHOR)
+            self.response['res_str'] = OBJECT_NOT_FOUND.format(AUTHOR)
         except Book.DoesNotExist:
-            self.response['res_str'] = OBJECT_NOT_FOUND.format(field_name=BOOK)
+            self.response['res_str'] = OBJECT_NOT_FOUND.format(BOOK)
         except Exception as ex:
             self.response['res_str']= GENERAL_ERROR + str(ex)
         return send_400(self.response)
@@ -487,7 +487,7 @@ class UserView(View):
     def __init__(self):
         self.response = init_response()
 
-    def get(self, request, *args, **kwargs):
+    def get(self, request):
         try: 
             params = request.GET.dict()
             first_name = params.get('first_name')
@@ -497,25 +497,25 @@ class UserView(View):
                 if not users:
                     raise ObjectDoesNotExist
                 self.response['res_data'] = [user.as_dict() for user in users]
-                self.response['res_str'] = FIELD_FETCHED_SUCCESSFULLY.format(field_name=USER)
+                self.response['res_str'] = FIELD_FETCHED_SUCCESSFULLY.format(USER)
                 return send_200(self.response)
             elif email:
                 user = User.objects.filter(email=email).exclude(status ="3")
                 if not user:
                     raise ObjectDoesNotExist
                 self.response['res_data'] = [user.as_dict() for user in user]
-                self.response['res_str'] = FIELD_FETCHED_SUCCESSFULLY.format(field_name=USER)
+                self.response['res_str'] = FIELD_FETCHED_SUCCESSFULLY.format(USER)
                 return send_200(self.response)
             else:
                 limit=int(params.get('limit', LIMIT))
                 offset=int(params.get('offset', OFFSET))
                 all_users = User.objects.filter().exclude(status ="3")[offset:offset+limit]
                 self.response['res_data'] = [user.as_dict() for user in all_users]
-                self.response['res_str'] = FIELD_FETCHED_SUCCESSFULLY.format(field_name=USER)
+                self.response['res_str'] = FIELD_FETCHED_SUCCESSFULLY.format(USER)
                 return send_200(self.response)
 
         except ObjectDoesNotExist:
-            self.response['res_str'] = OBJECT_NOT_FOUND.format(field_name=USER)
+            self.response['res_str'] = OBJECT_NOT_FOUND.format(USER)
         except Exception as ex:
             self.response['res_str'] = GENERAL_ERROR + str(ex)
         return send_400(self.response)    
@@ -547,13 +547,14 @@ class UserView(View):
                 if not books:
                     raise BookDoesNotExist
             
-            user_obj = User.objects.create(first_name=first_name, middle_name=middle_name, last_name=last_name, mobile=mobile, email=email, meta_data =meta_data, role=role, subscription=subscription)
+            user_obj = User.objects.create(first_name=first_name, middle_name=middle_name, last_name=last_name, \
+                mobile=mobile, email=email, meta_data =meta_data, role=role, subscription=subscription)
             user_obj.status="1"
             if books:
                 user_obj.favorites.add(*books)
             user_obj.save()
             self.response['res_data'] = user_obj.as_dict()
-            self.response['res_str'] = FIELD_CREATED_SUCCESSFULLY.format(field_name = USER)
+            self.response['res_str'] = FIELD_CREATED_SUCCESSFULLY.format(USER)
             return send_201(self.response)
 
         except (ValidationError, FieldBlank) as e:
@@ -561,35 +562,35 @@ class UserView(View):
         except IntegrityError:
             self.response['res_str'] = INTEGRITY_ERROR
         except BookDoesNotExist:
-            self.response['res_str'] = OBJECT_NOT_FOUND.format(field_name=BOOK)
+            self.response['res_str'] = OBJECT_NOT_FOUND.format(BOOK)
         except JSONError:
             self.response['res_str'] = INVALID_JSON
         except Exception as ex:
             self.response['res_str'] = GENERAL_ERROR + str(ex)
         return send_400(self.response)
 
-    def delete(self, request,*args, **kwargs):
+    def delete(self, request):
         try:
             params = json.loads(request.body)
             get_and_validate(params, ['user_id'])
             user_to_delete= User.objects.get(user_id= uuid.UUID(params['user_id']).hex)
             if user_to_delete.status is "3":
-                self.response['res_str'] = FIELD_ALREADY_DELETED.format(field_name = USER)
+                self.response['res_str'] = FIELD_ALREADY_DELETED.format(USER)
                 return send_400(self.response)
             user_to_delete.status = "3"
             user_to_delete.save()
-            self.response['res_str'] = FIELD_DELETED_SUCCESSFULLY.format(field_name = USER)
+            self.response['res_str'] = FIELD_DELETED_SUCCESSFULLY.format(USER)
             return send_200(self.response)
 
         except (ValidationError, FieldBlank) as e:
             self.response['res_str'] = str(e)
         except User.DoesNotExist:
-            self.response['res_str'] = OBJECT_NOT_FOUND.format(field_name=USER)
+            self.response['res_str'] = OBJECT_NOT_FOUND.format(USER)
         except Exception as ex:
             self.response['res_str'] = GENERAL_ERROR + str(ex)
         return send_400(self.response)
 
-    def put (self, request, *args, **kwargs):
+    def put (self, request):
         try:
             params = json.loads(request.body)
             get_and_validate(params,['email_id'])
@@ -606,7 +607,7 @@ class UserView(View):
             user_obj.mobile=mobile
             user_obj.save()
             self.response['res_data'] = user_obj.as_dict()
-            self.response['res_str'] = FIELD_UPDATED_SUCCESSFULLY.format(field_name = AUTHOR)
+            self.response['res_str'] = FIELD_UPDATED_SUCCESSFULLY.format(AUTHOR)
             return send_201(self.response)
 
         except (ValidationError,FieldBlank) as ex:
@@ -614,7 +615,7 @@ class UserView(View):
         except JSONError:
             self.response['res_str'] = INVALID_JSON
         except User.DoesNotExist:
-            self.response['res_str'] = OBJECT_NOT_FOUND.format(field_name=USER)
+            self.response['res_str'] = OBJECT_NOT_FOUND.format(USER)
         except Exception as ex:
             self.response['res_str'] = GENERAL_ERROR + str(ex)
         return send_400(self.response)
@@ -624,7 +625,7 @@ class EbookView(View):
     def __init__(self):
         self.response = init_response()
 
-    def get(self, request, *args, **kwargs):
+    def get(self, request):
         try: 
             params = request.GET.dict()
             book_name = params.get('book_name')
@@ -633,18 +634,18 @@ class EbookView(View):
                 if not ebook.exists():
                     raise ObjectDoesNotExist
                 self.response['res_data'] = [ebook.as_dict() for ebook in ebook]
-                self.response['res_str'] = FIELD_FETCHED_SUCCESSFULLY.format(field_name=EBOOK)
+                self.response['res_str'] = FIELD_FETCHED_SUCCESSFULLY.format(EBOOK)
                 return send_200(self.response)
             else:
                 limit=int(params.get('limit', LIMIT))
                 offset=int(params.get('offset', OFFSET))
                 all_ebooks = Ebook.objects.filter(approved =True)[offset:offset+limit]
                 self.response['res_data'] = [ebook.as_dict() for ebook in all_ebooks]
-                self.response['res_str'] =FIELD_FETCHED_SUCCESSFULLY.format(field_name=EBOOK)
+                self.response['res_str'] =FIELD_FETCHED_SUCCESSFULLY.format(EBOOK)
                 return send_200(self.response)
 
         except ObjectDoesNotExist:
-            self.response['res_str'] = OBJECT_NOT_FOUND.format(field_name=EBOOK)
+            self.response['res_str'] = OBJECT_NOT_FOUND.format(EBOOK)
         except Exception as ex:
             self.response['res_str'] = GENERAL_ERROR + str(ex)
         return send_400(self.response)
@@ -668,26 +669,26 @@ class EbookView(View):
         except (ValidationError, FieldBlank) as e:
             self.response['res_str'] = str(e)
         except BookError:
-            self.response['res_str'] = ONE_FEILD_NEEDED.format(field_name=BOOK, field_name2 = EBOOK)
+            self.response['res_str'] = ONE_FEILD_NEEDED.format(BOOK, EBOOK)
         except BookDoesNotExist:
-            self.response['res_str'] = OBJECT_NOT_FOUND.format(field_name=BOOK)
+            self.response['res_str'] = OBJECT_NOT_FOUND.format(BOOK)
         except Exception as ex:
             self.response['res_str'] = GENERAL_ERROR + str(ex)
         return send_400(self.response)
 
-    def delete(self, request,*args, **kwargs):
+    def delete(self, request):
         try:
             params = json.loads(request.body)
             get_and_validate(params, ['ebook_id'])
             ebook_to_delete= Ebook.objects.get(ebook_id= uuid.UUID(params['ebook_id']).hex)
             ebook_to_delete.delete()
-            self.response['res_str'] = FIELD_DELETED_SUCCESSFULLY.format(field_name = EBOOK)
+            self.response['res_str'] = FIELD_DELETED_SUCCESSFULLY.format(EBOOK)
             return send_200(self.response)
 
         except (ValidationError, FieldBlank) as e:
             self.response['res_str'] = str(e)
         except Ebook.DoesNotExist:
-            self.response['res_str'] = OBJECT_NOT_FOUND.format(field_name=EBOOK)
+            self.response['res_str'] = OBJECT_NOT_FOUND.format(EBOOK)
         except Exception as ex:
             self.response['res_str'] = GENERAL_ERROR + str(ex)
         return send_400(self.response)
@@ -702,13 +703,13 @@ class EbookView(View):
                 ebook.approved = True
                 ebook.save()
                 self.response['res_data'] = ebook.as_dict()
-                self.response['res_str'] = FIELD_APPROVED_SUCCESSFULLY.format(field_name = EBOOK)
+                self.response['res_str'] = FIELD_APPROVED_SUCCESSFULLY.format(EBOOK)
                 return send_200(self.response)
             else:
-                self.response['res_str'] = LOGIN_ERROR
-                return send_200(self.response)
+                self.response['res_str'] = AUTHORIZATION_ERROR
+                return send_401(self.response)
         except Ebook.DoesNotExist:
-            self.response['res_str'] = OBJECT_NOT_FOUND.format(field_name=EBOOK)
+            self.response['res_str'] = OBJECT_NOT_FOUND.format(EBOOK)
         except (ValidationError, FieldBlank) as e:
             self.response['res_str'] = str(e)
         return send_400(self.response)
@@ -718,7 +719,7 @@ class HardCopyView(View):
     def __init__(self):
         self.response = init_response()
 
-    def get(self, request, *args, **kwargs):
+    def get(self, request):
         try: 
             params = request.GET.dict()
             book_name = params.get('book_name')
@@ -727,18 +728,18 @@ class HardCopyView(View):
                 if not hardCopy.exists():
                     raise ObjectDoesNotExist
                 self.response['res_data'] = [hardCopy.as_dict() for hardCopy in hardCopy]
-                self.response['res_str'] = FIELD_FETCHED_SUCCESSFULLY.format(field_name=HARDCOPY)
+                self.response['res_str'] = FIELD_FETCHED_SUCCESSFULLY.format(HARDCOPY)
                 return send_200(self.response)
             else:
                 limit=int(params.get('limit', LIMIT))
                 offset=int(params.get('offset', OFFSET))
                 all_hardCopys = HardCopy.objects.filter()[offset:offset+limit]
                 self.response['res_data'] = [hardCopy.as_dict() for hardCopy in all_hardCopys]
-                self.response['res_str'] = FIELD_FETCHED_SUCCESSFULLY.format(field_name=HARDCOPY)
+                self.response['res_str'] = FIELD_FETCHED_SUCCESSFULLY.format(HARDCOPY)
                 return send_200(self.response)
 
         except ObjectDoesNotExist:
-            self.response['res_str'] = OBJECT_NOT_FOUND.format(field_name=HARDCOPY)
+            self.response['res_str'] = OBJECT_NOT_FOUND.format(HARDCOPY)
         except Exception as ex:
             self.response['res_str'] = GENERAL_ERROR + str(ex)
         return send_400(self.response)
@@ -761,37 +762,36 @@ class HardCopyView(View):
             else:
                 hardCopy_obj = HardCopy.objects.create(book=book.first(), isLent=isLent)
             self.response['res_data'] = hardCopy_obj.as_dict()
-            self.response['res_str'] = FIELD_CREATED_SUCCESSFULLY.format(field_name = HARDCOPY)
+            self.response['res_str'] = FIELD_CREATED_SUCCESSFULLY.format(HARDCOPY)
             return send_201(self.response)
 
         except (ValidationError, FieldBlank) as e:
             self.response['res_str'] = str(e)
         except BookError:
-            self.response['res_str'] = ONE_FEILD_NEEDED.format(field_name=BOOK, field_name2 = HARDCOPY)
+            self.response['res_str'] = ONE_FEILD_NEEDED.format(BOOK, HARDCOPY)
         except BookDoesNotExist:
-            self.response['res_str'] = OBJECT_NOT_FOUND.format(field_name=BOOK)
+            self.response['res_str'] = OBJECT_NOT_FOUND.format(BOOK)
         except Exception as ex:
             self.response['res_str'] = GENERAL_ERROR + str(ex)
         return send_400(self.response)
 
-    def delete(self, request,id,*args, **kwargs):
+    def delete(self, request):
         try:
             params = json.loads(request.body)
             get_and_validate(params,['hardCopy_id'])
             hardCopy_id=params.get('hardCopy_id')
             hardCopy_to_delete= HardCopy.objects.get(hardCopy_id = hardCopy_id)
             hardCopy_to_delete.delete()
-            self.response['res_data'] = f'HardCopy id was {id}'
-            self.response['res_str'] = FIELD_DELETED_SUCCESSFULLY.format(field_name = HARDCOPY)
+            self.response['res_str'] = FIELD_DELETED_SUCCESSFULLY.format(HARDCOPY)
             return send_200(self.response)
 
         except (ValidationError, FieldBlank) as e:
             self.response['res_str'] = str(e)
         except HardCopy.DoesNotExist:
-            self.response['res_str'] = OBJECT_NOT_FOUND.format(field_name=HARDCOPY)
+            self.response['res_str'] = OBJECT_NOT_FOUND.format(HARDCOPY)
             return send_404(self.response)
 
-    def put (self, request, *args, **kwargs):
+    def put (self, request):
         try:
             params = json.loads(request.body)
             get_and_validate(params,['hardCopy_id'])
@@ -811,13 +811,42 @@ class HardCopyView(View):
             hardcopy_obj.lent_to=user_obj
             hardcopy_obj.save()
             self.response['res_data'] = hardcopy_obj.as_dict()
-            self.response['res_str'] = FIELD_UPDATED_SUCCESSFULLY.format(field_name = HARDCOPY)
+            self.response['res_str'] = FIELD_UPDATED_SUCCESSFULLY.format(HARDCOPY)
             return send_201(self.response)
         
         except (ValidationError, FieldBlank) as e:
             self.response['res_str'] = str(e)
         except HardCopy.DoesNotExist:
-            self.response['res_str'] = OBJECT_NOT_FOUND.format(field_name=HARDCOPY)
+            self.response['res_str'] = OBJECT_NOT_FOUND.format(HARDCOPY)
         except Exception as ex:
             self.response['res_str']= GENERAL_ERROR + str(ex)
+        return send_400(self.response)
+
+class Search(View):
+
+    def __init__(self):
+        self.response = init_response()
+
+    def get(self, request):
+        try:
+            params = request.GET.dict()
+            name=params.get('name')
+            get_and_validate(params, ['name']) 
+            limit=int(params.get('limit', LIMIT))
+            offset=int(params.get('offset', OFFSET))
+            all_books = Book.objects.filter(Q(authors__in=Author.objects.filter(name__icontains=name)) |\
+                 Q(publisher__in=Publisher.objects.filter(name__icontains=name)) | \
+                    Q(languages__in=Language.objects.filter(name__icontains=name))). \
+                        exclude(status ="3").distinct()[offset:offset+limit]
+            if not all_books:
+                raise ObjectDoesNotExist
+            self.response['res_data'] = [book.name for book in all_books]
+            self.response['res_str'] = FIELD_FETCHED_SUCCESSFULLY.format(BOOK)
+            return send_200(self.response)
+        except (ValidationError, FieldBlank) as e:
+            self.response['res_str'] = str(e)
+        except ObjectDoesNotExist:
+            self.response['res_str'] = OBJECT_NOT_FOUND.format(BOOK)
+        except Exception as ex:
+            self.response['res_str'] = GENERAL_ERROR + str(ex)
         return send_400(self.response)

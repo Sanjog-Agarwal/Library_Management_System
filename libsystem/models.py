@@ -3,11 +3,11 @@ from phonenumber_field.modelfields import PhoneNumberField
 import uuid
 from django.core.validators import *
 class BaseModel(models.Model):
-    status_choices = {
+    status_choices = (
         ("1", "Active"),
         ("2", "Inactive"),
         ("3", "Deleted"),
-    }
+        )
     created_on = models.DateTimeField(auto_now_add=True)
     updated_on = models.DateTimeField(auto_now=True)
     status = models.CharField(max_length=1, choices = status_choices, default="2")
@@ -17,11 +17,11 @@ class BaseModel(models.Model):
 
 
 class Author(BaseModel):
-    readonly_fields = ('a_id')
+    # readonly_fields = ('a_id')
     a_id = models.UUIDField(primary_key = True, default = uuid.uuid4(), editable = False)
     name = models.CharField(max_length=200)
     description = models.TextField(null=True, blank=True)
-    meta_data = models.JSONField(null=True, blank=True)
+    meta_data = models.JSONField(default = {})
 
     def __str__(self):
         return str(self.a_id)
@@ -56,7 +56,7 @@ class Language(BaseModel):
 class Publisher(BaseModel):
     pub_id = models.UUIDField(primary_key = True, default = uuid.uuid4(), editable = False)
     name = models.CharField(max_length=100)
-    meta_data = models.JSONField(null=True, blank=True)
+    meta_data = models.JSONField(default = {})
 
     def __str__(self):
         return str(self.pub_id)
@@ -69,14 +69,17 @@ class Publisher(BaseModel):
         }
         
 class Book(BaseModel):
-    BOOL_CHOICES = ((True, 'Yes, there exist an EBook'), (False, 'No, not an Ebook'))
+    BOOL_CHOICES = (
+        (True, 'Yes, there exist an EBook'), 
+        (False, 'No, not an Ebook')
+        )
 
     book_id = models.UUIDField(primary_key = True, default = uuid.uuid4(), editable = False)
     name = models.CharField(max_length=200)
     languages = models.ManyToManyField(Language,null=True, blank=True)
     authors = models.ManyToManyField(Author,null=True, blank=True)
     publisher = models.ForeignKey(Publisher, on_delete=models.CASCADE)
-    extra_details = models.JSONField(null=True, blank=True)
+    extra_details = models.JSONField(default = {})
     is_ebook = models.BooleanField(choices=BOOL_CHOICES,null=True, blank=True)
 
     def __str__(self):
@@ -95,11 +98,11 @@ class Book(BaseModel):
 
 
 class User(BaseModel):
-    type_choices = {
+    type_choices = (
         ("1", "Super Admin"),
         ("2", "Librarian"),
         ("3", "User"),
-    }
+    )
 
     user_id = models.UUIDField(primary_key = True, default = uuid.uuid4(), editable = False),
     first_name = models.CharField(max_length=200)
@@ -107,7 +110,7 @@ class User(BaseModel):
     last_name = models.CharField(max_length=200, null=True, blank=True)
     mobile = PhoneNumberField(null=True, blank=True)
     email = models.EmailField(max_length = 254, unique=True)
-    meta_data = models.JSONField(null=True, blank=True)
+    meta_data = models.JSONField(default = {})
     role = models.CharField(max_length=1, choices = type_choices, default="3")
     subscription = models.BooleanField(default=False)
     favorites = models.ManyToManyField(Book, null=True, blank=True)
@@ -132,7 +135,7 @@ class User(BaseModel):
 class Ebook(models.Model):
     book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name="ebook")
     ebook_id = models.UUIDField(primary_key = True, default = uuid.uuid4(), editable = False)
-    book_location = models.CharField(max_length=200, null=True, blank=True)
+    book_location = models.CharField(max_length=200)
     approved = models.BooleanField(default=False)
 
     def __str__(self):

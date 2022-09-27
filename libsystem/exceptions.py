@@ -1,5 +1,3 @@
-from .responses import *
-
 class ValidationError(Exception):
     pass
 
@@ -25,9 +23,6 @@ class AuthorError(Exception):
     pass
 
 class AuthorDoesNotExist(Exception):
-    pass
-
-class EmailNotUnique(Exception):
     pass
 
 class BookDoesNotExist(Exception):

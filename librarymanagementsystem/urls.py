@@ -28,5 +28,5 @@ urlpatterns = [
     path('user/', csrf_exempt(views.UserView.as_view())),
     path('hardcopy/', csrf_exempt(views.HardCopyView.as_view())),
     # path('hardcopy/<int:id>', csrf_exempt(views.HardCopyView.as_view())),
-    # path('search/', csrf_exempt(views.Search.as_view())),   
+    path('search/', csrf_exempt(views.Search.as_view())),   
 ]
